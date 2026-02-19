@@ -98,6 +98,70 @@ jobs:
           files: "app/build/outputs/apk/release/app-release-unsigned.apk"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if [ "${{ github.event.client_payload.show_toolbar }}" == "true" ]; then
+             sed -i 's|false; // FLAG_TOOLBAR_PLACEHOLDER|true;|' app/src/main/java/com/appbuilder/template/MainActivity.java
+          fi
+
+          SPLASH_COLOR="${{ github.event.client_payload.splash_color }}"
+          sed -i "s|<color name=\"splash_bg\">.*</color>|<color name=\"splash_bg\">$SPLASH_COLOR</color>|" app/src/main/res/values/colors.xml
+
+          ICON_URL="${{ github.event.client_payload.icon_url }}"
+          if [ ! -z "$ICON_URL" ] && [ "$ICON_URL" != "null" ]; then
+            wget -O custom_icon.png "$ICON_URL"
+            
+            mkdir -p app/src/main/res/mipmap-mdpi
+            mkdir -p app/src/main/res/mipmap-hdpi
+            mkdir -p app/src/main/res/mipmap-xhdpi
+            mkdir -p app/src/main/res/mipmap-xxhdpi
+            mkdir -p app/src/main/res/mipmap-xxxhdpi
+            
+            convert custom_icon.png -resize 48x48 app/src/main/res/mipmap-mdpi/ic_launcher.png
+            convert custom_icon.png -resize 72x72 app/src/main/res/mipmap-hdpi/ic_launcher.png
+            convert custom_icon.png -resize 96x96 app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            convert custom_icon.png -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            convert custom_icon.png -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            
+            cp app/src/main/res/mipmap-mdpi/ic_launcher.png app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            cp app/src/main/res/mipmap-hdpi/ic_launcher.png app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            cp app/src/main/res/mipmap-xhdpi/ic_launcher.png app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            cp app/src/main/res/mipmap-xxhdpi/ic_launcher.png app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          fi
+
+          SPLASH_URL="${{ github.event.client_payload.splash_url }}"
+          
+          mkdir -p app/src/main/res/drawable
+          
+          if [ ! -z "$SPLASH_URL" ] && [ "$SPLASH_URL" != "null" ]; then
+            wget -O splash_custom.png "$SPLASH_URL"
+            convert splash_custom.png -resize "800x800>" app/src/main/res/drawable/splash_logo.png
+          else
+            if [ -f "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" ]; then
+                cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/drawable/splash_logo.png
+            else
+                convert -size 800x800 xc:transparent app/src/main/res/drawable/splash_logo.png
+            fi
+          fi
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Release APK
+        run: gradle assembleRelease
+
+      - name: Publish Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "build-${{ github.run_number }}"
+          name: "Build ${{ github.run_number }} - ${{ github.event.client_payload.app_name }}"
+          body: |
+            **App Name:** ${{ github.event.client_payload.app_name }}
+            **Package:** ${{ github.event.client_payload.package_name }}
+            **Target URL:** ${{ github.event.client_payload.app_url }}
+          files: "app/build/outputs/apk/release/app-release-unsigned.apk"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
           if [ "${{ github.event.client_payload.show_toolbar }}" == "true" ]; then
              sed -i 's|false; // FLAG_TOOLBAR_PLACEHOLDER|true;|' app/src/main/java/com/appbuilder/template/MainActivity.java
