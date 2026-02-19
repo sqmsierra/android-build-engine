@@ -1,1 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
 
+android {
+    namespace 'com.appbuilder.template'
+    compileSdk 33
+
+    defaultConfig {
+        // --- CRITICAL CONFIGURATION ---
+        // The GitHub Action searches for "com.appbuilder.template" 
+        // and replaces it with the user's Package Name (e.g., com.myshop.app).
+        // DO NOT CHANGE THIS STRING MANUALLY without updating build.yml.
+        applicationId "com.appbuilder.template"
+        
+        minSdk 24       // Supports Android 7.0 (Nougat) and above
+        targetSdk 33    // Targets Android 13
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    // Core Android Libraries
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    
+    // Feature: Pull-to-Refresh functionality
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    
+    // Testing (Standard includes)
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
