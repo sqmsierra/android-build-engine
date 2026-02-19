@@ -22,6 +22,11 @@ jobs:
       - name: Install System Dependencies
         run: sudo apt-get update && sudo apt-get install -y imagemagick wget
 
+      - name: Clean Bad Git Files
+        run: |
+          find app/src/main/res -name "s" -exec rm -rf {} +
+          find app/src/main/res -type f ! -name "*.xml" ! -name "*.png" ! -name "*.webp" -delete
+
       - name: Inject Configuration & Assets
         run: |
           sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${{ github.event.client_payload.app_name }}</string>|" app/src/main/res/values/strings.xml
@@ -70,14 +75,11 @@ jobs:
             fi
           fi
 
-      - name: Clean Invalid Resource Files
-        run: |
-          find app/src/main/res -type f ! -name "*.xml" ! -name "*.png" ! -name "*.webp" -delete
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.2'
+          cache-disabled: true
 
       - name: Build Release APK
         run: gradle assembleRelease
