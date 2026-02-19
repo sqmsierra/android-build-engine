@@ -1,7 +1,8 @@
 name: Build Android App
 on:
   repository_dispatch:
-    types: [build-apk]
+    types:
+      - build-apk
 
 jobs:
   build:
@@ -24,28 +25,27 @@ jobs:
 
       - name: Inject Configuration & Assets
         run: |
-          sed -i "s/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">${{ github.event.client_payload.app_name }}<\/string>/" app/src/main/res/values/strings.xml
+          sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${{ github.event.client_payload.app_name }}</string>|" app/src/main/res/values/strings.xml
           
-          sed -i "s/applicationId \"com.appbuilder.template\"/applicationId \"${{ github.event.client_payload.package_name }}\"/" app/build.gradle
+          sed -i "s|applicationId \"com.appbuilder.template\"|applicationId \"${{ github.event.client_payload.package_name }}\"|" app/build.gradle
           
           sed -i "s|https://google.com|${{ github.event.client_payload.app_url }}|" app/src/main/java/com/appbuilder/template/MainActivity.java
           
-          sed -i "s/#6200EE/${{ github.event.client_payload.primary_color }}/g" app/src/main/res/values/colors.xml
+          sed -i "s|#6200EE|${{ github.event.client_payload.primary_color }}|g" app/src/main/res/values/colors.xml
           
           sed -i "s|CUSTOM_UA_PLACEHOLDER|${{ github.event.client_payload.user_agent }}|" app/src/main/java/com/appbuilder/template/MainActivity.java
           
           if [ "${{ github.event.client_payload.show_toolbar }}" == "true" ]; then
-             sed -i 's/false; \/\/ FLAG_TOOLBAR_PLACEHOLDER/true;/' app/src/main/java/com/appbuilder/template/MainActivity.java
+             sed -i 's|false; // FLAG_TOOLBAR_PLACEHOLDER|true;|' app/src/main/java/com/appbuilder/template/MainActivity.java
           fi
 
           SPLASH_COLOR="${{ github.event.client_payload.splash_color }}"
-          sed -i "s|<color name=\"splash_bg\">.*<\/color>|<color name=\"splash_bg\">$SPLASH_COLOR<\/color>|" app/src/main/res/values/colors.xml
+          sed -i "s|<color name=\"splash_bg\">.*</color>|<color name=\"splash_bg\">$SPLASH_COLOR</color>|" app/src/main/res/values/colors.xml
 
           ICON_URL="${{ github.event.client_payload.icon_url }}"
           if [ ! -z "$ICON_URL" ] && [ "$ICON_URL" != "null" ]; then
             wget -O custom_icon.png "$ICON_URL"
             
-            # 1. Create directories first to prevent "No such file or directory" error
             mkdir -p app/src/main/res/mipmap-mdpi
             mkdir -p app/src/main/res/mipmap-hdpi
             mkdir -p app/src/main/res/mipmap-xhdpi
@@ -67,14 +67,12 @@ jobs:
 
           SPLASH_URL="${{ github.event.client_payload.splash_url }}"
           
-          # 2. Ensure drawable folder exists
           mkdir -p app/src/main/res/drawable
           
           if [ ! -z "$SPLASH_URL" ] && [ "$SPLASH_URL" != "null" ]; then
             wget -O splash_custom.png "$SPLASH_URL"
-            convert splash_custom.png -resize 800x800\> app/src/main/res/drawable/splash_logo.png
+            convert splash_custom.png -resize "800x800>" app/src/main/res/drawable/splash_logo.png
           else
-            # Safely fallback to the launcher icon, or make a transparent fallback if it doesn't exist
             if [ -f "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" ]; then
                 cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/drawable/splash_logo.png
             else
@@ -92,63 +90,12 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: build-${{ github.run_number }}
-          name: ${{ github.event.client_payload.app_name }} (Build ${{ github.run_number }})
+          tag_name: "build-${{ github.run_number }}"
+          name: "Build ${{ github.run_number }} - ${{ github.event.client_payload.app_name }}"
           body: |
             **App Name:** ${{ github.event.client_payload.app_name }}
             **Package:** ${{ github.event.client_payload.package_name }}
             **Target URL:** ${{ github.event.client_payload.app_url }}
-          files: app/build/outputs/apk/release/app-release-unsigned.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          if [ "${{ github.event.client_payload.show_toolbar }}" == "true" ]; then
-             sed -i 's/false; \/\/ FLAG_TOOLBAR_PLACEHOLDER/true;/' app/src/main/java/com/appbuilder/template/MainActivity.java
-          fi
-
-          SPLASH_COLOR="${{ github.event.client_payload.splash_color }}"
-          sed -i "s|<color name=\"splash_bg\">.*<\/color>|<color name=\"splash_bg\">$SPLASH_COLOR<\/color>|" app/src/main/res/values/colors.xml
-
-          ICON_URL="${{ github.event.client_payload.icon_url }}"
-          if [ ! -z "$ICON_URL" ] && [ "$ICON_URL" != "null" ]; then
-            wget -O custom_icon.png "$ICON_URL"
-            
-            convert custom_icon.png -resize 48x48 app/src/main/res/mipmap-mdpi/ic_launcher.png
-            convert custom_icon.png -resize 72x72 app/src/main/res/mipmap-hdpi/ic_launcher.png
-            convert custom_icon.png -resize 96x96 app/src/main/res/mipmap-xhdpi/ic_launcher.png
-            convert custom_icon.png -resize 144x144 app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-            convert custom_icon.png -resize 192x192 app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-            
-            cp app/src/main/res/mipmap-mdpi/ic_launcher.png app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-            cp app/src/main/res/mipmap-hdpi/ic_launcher.png app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-            cp app/src/main/res/mipmap-xhdpi/ic_launcher.png app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-            cp app/src/main/res/mipmap-xxhdpi/ic_launcher.png app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-            cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          fi
-
-          SPLASH_URL="${{ github.event.client_payload.splash_url }}"
-          if [ ! -z "$SPLASH_URL" ] && [ "$SPLASH_URL" != "null" ]; then
-            wget -O splash_custom.png "$SPLASH_URL"
-            convert splash_custom.png -resize 800x800\> app/src/main/res/drawable/splash_logo.png
-          else
-            cp app/src/main/res/mipmap-xxxhdpi/ic_launcher.png app/src/main/res/drawable/splash_logo.png
-          fi
-
-      - name: Grant Execute Permission
-        run: chmod +x gradlew
-
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
-
-      - name: Publish Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: ${{ github.event.client_payload.app_name }} (Build ${{ github.run_number }})
-          body: |
-            **App Name:** ${{ github.event.client_payload.app_name }}
-            **Package:** ${{ github.event.client_payload.package_name }}
-            **Target URL:** ${{ github.event.client_payload.app_url }}
-          files: app/build/outputs/apk/release/app-release-unsigned.apk
+          files: "app/build/outputs/apk/release/app-release-unsigned.apk"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
