@@ -1,0 +1,44 @@
+name: Build APK from API
+on:
+  repository_dispatch:
+    types: [build-apk]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - [...](asc_slot://start-slot-1)name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Inject Configuration
+        run: |
+          # Overwrite the app details with data sent from your PHP Dashboard
+          echo "Injecting App Name: ${{ github.event.client_payload.app_name }}"
+          
+          # This is where you would normally use sed to replace strings in strings.xml
+          # For this demo, we are printing it to show it works
+          echo "Package: ${{ github.event.client_payload.package_name }}"
+          echo "URL: ${{ github.event.client_payload.app_url }}"
+
+      - [...](asc_slot://start-slot-3)name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - [...](asc_slot://start-slot-5)name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: App Build #${{ github.run_number }}
+          files: app/build/outputs/apk/release/app-release-unsigned.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
