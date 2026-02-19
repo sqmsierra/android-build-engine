@@ -1,1 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Standard Material Design Colors (Do not touch) -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 
+    <!-- 
+      DYNAMIC THEME COLORS
+      The GitHub Action script replaces ALL instances of #6200EE with the user's color.
+      We use the same hex for primary and dark to ensure the Status Bar matches the App Bar.
+    -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#6200EE</color>
+    <color name="colorAccent">#03DAC5</color>
+
+    <!-- 
+      DYNAMIC SPLASH BACKGROUND
+      The GitHub Action specifically looks for <color name="splash_bg">
+      and replaces the content inside.
+    -->
+    <color name="splash_bg">#FFFFFF</color>
+</resources>
