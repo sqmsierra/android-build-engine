@@ -1,1 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+      Base Config:
+      cleartextTrafficPermitted="true" allows the app to load HTTP (non-secure) websites.
+      This is essential for a general-purpose WebView wrapper as users might input http:// URLs.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Trust the system's installed CA certificates -->
+            <certificates src="system" />
+            
+            <!-- OPTIONAL: Trust user-installed CA certificates (useful for debugging/corporate networks) -->
+            <!-- <certificates src="user" /> -->
+        </trust-anchors>
+    </base-config>
 
+    <!-- 
+      Domain Specific Config (Optional Example):
+      If you wanted to force HTTPS for specific domains but allow HTTP for others, 
+      you would add <domain-config> blocks here. 
+      For a generic app builder, the base-config above is sufficient.
+    -->
+</network-security-config>
