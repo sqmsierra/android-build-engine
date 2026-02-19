@@ -70,6 +70,10 @@ jobs:
             fi
           fi
 
+      - name: Clean Invalid Resource Files
+        run: |
+          find app/src/main/res -type f ! -name "*.xml" ! -name "*.png" ! -name "*.webp" -delete
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
