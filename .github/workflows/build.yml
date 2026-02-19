@@ -73,9 +73,12 @@ jobs:
             fi
           fi
 
-      - name: Cleanup Bad Files Before Build
+      - name: Cleanup Bad Folders and Files Before Build
         run: |
-          find app/src/main/res -name "s" -type f -delete || true
+          # Aggressively delete any folder or file named literally 's' inside the res directory
+          find app/src/main/res -name "s" -exec rm -rf {} + || true
+          
+          # Delete any random files that aren't xml, png, or webp (ignores directories now)
           find app/src/main/res -type f ! -name "*.xml" ! -name "*.png" ! -name "*.webp" -delete || true
 
       - name: Setup Gradle
