@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [build-apk]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build & Release APK
@@ -21,11 +24,6 @@ jobs:
 
       - name: Install System Dependencies
         run: sudo apt-get update && sudo apt-get install -y imagemagick wget
-
-      - name: Clean Bad Git Files
-        run: |
-          find app/src/main/res -name "s" -exec rm -rf {} +
-          find app/src/main/res -type f ! -name "*.xml" ! -name "*.png" ! -name "*.webp" -delete
 
       - name: Inject Configuration & Assets
         run: |
@@ -48,7 +46,6 @@ jobs:
 
           ICON_URL="${{ github.event.client_payload.icon_url }}"
           if [ ! -z "$ICON_URL" ] && [ "$ICON_URL" != "null" ]; then
-            # Fix for 415 error: spoofing user agent
             wget -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O custom_icon.png "$ICON_URL"
             mkdir -p app/src/main/res/mipmap-mdpi app/src/main/res/mipmap-hdpi app/src/main/res/mipmap-xhdpi app/src/main/res/mipmap-xxhdpi app/src/main/res/mipmap-xxxhdpi
             convert custom_icon.png -resize 48x48 app/src/main/res/mipmap-mdpi/ic_launcher.png
@@ -66,7 +63,6 @@ jobs:
           SPLASH_URL="${{ github.event.client_payload.splash_url }}"
           mkdir -p app/src/main/res/drawable
           if [ ! -z "$SPLASH_URL" ] && [ "$SPLASH_URL" != "null" ]; then
-            # Fix for 415 error: spoofing user agent
             wget -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O splash_custom.png "$SPLASH_URL"
             convert splash_custom.png -resize "800x800>" app/src/main/res/drawable/splash_logo.png
           else
@@ -76,6 +72,11 @@ jobs:
                 convert -size 800x800 xc:transparent app/src/main/res/drawable/splash_logo.png
             fi
           fi
+
+      - name: Cleanup Bad Files Before Build
+        run: |
+          find app/src/main/res -name "s" -type f -delete || true
+          find app/src/main/res -type f ! -name "*.xml" ! -name "*.png" ! -name "*.webp" -delete || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -92,6 +93,6 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Build ${{ github.run_number }}
           body: App successfully generated for ${{ github.event.client_payload.app_name }}
-          files: app/build/outputs/apk/release/app-release-unsigned.apk
+          files: app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
